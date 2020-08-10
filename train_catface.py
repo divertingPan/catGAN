@@ -149,8 +149,7 @@ if __name__ == "__main__":
                                                                                                error_d.item(),
                                                                                                real_out.data.mean(),
                                                                                                fake_out.data.mean(),
-                                                                                               optimize_g.param_groups[
-                                                                                                   0]['lr']))
+                                                                                               optimize_g.param_groups[0]['lr']))
             # 训练生成器
             netg.zero_grad()
             # noises.data.copy_(torch.randn(opt.batch_size, opt.nz, 1, 1))
@@ -166,7 +165,8 @@ if __name__ == "__main__":
             if i % opt.save_every == 0:
                 fix_fake_image = netg(fix_noises) * 0.5 + 0.5
                 # save_image(real_img, "img/generate/catface/{0}-{1}-real_img.jpg".format(epoch, i), nrow=5)
-                save_image(fix_fake_image.detach(), "img/generate/catface/{0}-{1}-fake_img.jpg".format(epoch, i), nrow=int(math.sqrt(opt.batch_size)))
+                save_image(fix_fake_image.detach(), "img/generate/catface/{0}-{1}-fake_img.jpg".format(epoch, i),
+                           nrow=int(math.sqrt(opt.batch_size)))
                 torch.save(netd, "model/catface/netd.pth")
                 torch.save(netg, "model/catface/netg.pth")
                 print("\033[34m图片与模型已保存")
