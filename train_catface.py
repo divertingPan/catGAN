@@ -7,13 +7,15 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import argparse
 from torch.optim import lr_scheduler
+import math
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ngf", default=96)
 parser.add_argument("--ndf", default=96)
 parser.add_argument("--nz", default=256)
 parser.add_argument("--img_size", default=96)
-parser.add_argument("--batch_size", default=25)
+parser.add_argument("--batch_size", default=36)
 parser.add_argument("--lr1", default=0.0002)  # G的学习率
 parser.add_argument("--lr2", default=0.0002)  # D的学习率
 parser.add_argument("--beta1", default=0.5)
@@ -164,7 +166,7 @@ if __name__ == "__main__":
             if i % opt.save_every == 0:
                 fix_fake_image = netg(fix_noises) * 0.5 + 0.5
                 # save_image(real_img, "img/generate/catface/{0}-{1}-real_img.jpg".format(epoch, i), nrow=5)
-                save_image(fix_fake_image.detach(), "img/generate/catface/{0}-{1}-fake_img.jpg".format(epoch, i), nrow=5)
+                save_image(fix_fake_image.detach(), "img/generate/catface/{0}-{1}-fake_img.jpg".format(epoch, i), nrow=int(math.sqrt(opt.batch_size)))
                 torch.save(netd, "model/catface/netd.pth")
                 torch.save(netg, "model/catface/netg.pth")
                 print("\033[34m图片与模型已保存")
