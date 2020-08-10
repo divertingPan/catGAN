@@ -6,19 +6,19 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import argparse
-
+import math
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ngf", default=96)
 parser.add_argument("--ndf", default=96)
 parser.add_argument("--nz", default=256)
 parser.add_argument("--img_size", default=96)
-parser.add_argument("--batch_size", default=25)
+parser.add_argument("--batch_size", default=36)
 parser.add_argument("--lr1", default=0.0002)  # G的学习率
 parser.add_argument("--lr2", default=0.0002)  # D的学习率
 parser.add_argument("--beta1", default=0.5)
 parser.add_argument("--epochs", default=3000)
-parser.add_argument("--save_every", default=100)
+parser.add_argument("--save_every", default=20)
 opt = parser.parse_args()
 
 cudnn.benchmark = True
@@ -92,9 +92,12 @@ if __name__ == "__main__":
 
     # 加载数据
     dataset = datasets.ImageFolder(r"img/train/anim",
-                                   transform=transforms.Compose([transforms.Resize(opt.img_size),
-                                                                 transforms.RandomHorizontalFlip(),
-                                                                 transforms.ToTensor()]))
+                                   transform=transforms.Compose([
+                                       # 要用transforms.Resize([224, 224]), 不能写成transforms.Resize(224)，
+                                       # transforms.Resize(224)表示把图像的短边统一为224，另外一边做同样倍率缩放，不一定为224
+                                       transforms.Resize(opt.img_size, opt.img_size),
+                                       transforms.RandomHorizontalFlip(),
+                                       transforms.ToTensor()]))
     dataloader = DataLoader(dataset,
                             batch_size=opt.batch_size,
                             shuffle=True,
@@ -112,7 +115,7 @@ if __name__ == "__main__":
     # 训练网络
     netg.train()
     netd.train()
-    for epoch in range(opt.epochs+1):
+    for epoch in range(opt.epochs + 1):
         for i, img in enumerate(dataloader):
             real_img = img[0].to(device)  # dataloader里的img是个列表，第一列是图片第二列是类别
             # 训练判别器
@@ -131,11 +134,11 @@ if __name__ == "__main__":
             optimize_d.step()
             # 计算loss
             error_d = error_d_fake + error_d_real
-            if i == 0:
-                print("\033[0m第{0}轮:\t判别网络 损失:{1:.5} 对真图评分:{2:.5} 对生成图评分:{3:.5}".format(epoch+1,
-                                                                                      error_d.item(),
-                                                                                      real_out.data.mean(),
-                                                                                      fake_out.data.mean()))
+            if i % opt.save_every == 0:
+                print("\033[0m{0}-{1}:\t判别网络 损失:{2:.5} 对真图评分:{3:.5} 对生成图评分:{4:.5}".format(epoch + 1, i,
+                                                                                          error_d.item(),
+                                                                                          real_out.data.mean(),
+                                                                                          fake_out.data.mean()))
             # 训练生成器
             optimize_g.zero_grad()
             # noises.data.copy_(torch.randn(opt.batch_size, opt.nz, 1, 1))
@@ -144,13 +147,14 @@ if __name__ == "__main__":
             error_g = loss_func(output, true_labels)
             error_g.backward()
             optimize_g.step()
-            if i == 0:
+            if i % opt.save_every == 0:
                 print("\t\t\033[32m生成网络 损失:{0:.5}".format(error_g.item()))
             # 保存模型和图片
-            if epoch % opt.save_every == 0 and i == 0:
-                fix_fake_image = netg(fix_noises)*0.5+0.5
+            if i % opt.save_every == 0:
+                fix_fake_image = netg(fix_noises) * 0.5 + 0.5
                 # save_image(real_img.data, "img/generate/anim/{0}-{1}-real_img.jpg".format(epoch, i), nrow=5)
-                save_image(fix_fake_image.detach(), "img/generate/anim/{0}-{1}-fake_img.jpg".format(epoch, i), nrow=5)
+                save_image(fix_fake_image.detach(), "img/generate/anim/{0}-{1}-fake_img.jpg".format(epoch, i),
+                           nrow=int(math.sqrt(opt.batch_size)))
                 torch.save(netd, "model/anim/netd.pth")
                 torch.save(netg, "model/anim/netg.pth")
                 print("\033[34m图片与模型已保存")
