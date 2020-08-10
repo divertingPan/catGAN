@@ -95,7 +95,7 @@ if __name__ == "__main__":
                                    transform=transforms.Compose([
                                        # 要用transforms.Resize([224, 224]), 不能写成transforms.Resize(224)，
                                        # transforms.Resize(224)表示把图像的短边统一为224，另外一边做同样倍率缩放，不一定为224
-                                       transforms.Resize(opt.img_size, opt.img_size),
+                                       transforms.Resize([opt.img_size, opt.img_size]),
                                        transforms.RandomHorizontalFlip(),
                                        transforms.ToTensor()]))
     dataloader = DataLoader(dataset,
